@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Bíblia Sagrada - Leitor & Estudo Local</title>
+  
+<!-- PWA / Mobile App Meta Tags (Corrigido para evitar o aviso do Chrome) -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Bíblia">
+  
+  <!-- Favicon SVG Embutido (In-line) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f59e0b'/><text x='50%' y='65%' font-size='60' text-anchor='middle' fill='white'>📖</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23f59e0b'/><text x='50%' y='65%' font-size='60' text-anchor='middle' fill='white'>📖</text></svg>">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome Icons (v6.5.2) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  
+  <!-- Google Fonts: Inter & Merriweather -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            sepia: {
+              50: '#fdfbf7',
+              100: '#f8f1e5',
+              200: '#eddcc4',
+              700: '#634b35',
+              800: '#433422',
+              900: '#2b2014'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Merriweather', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Estilos do tema Sépia */
+    body.theme-sepia {
+      background-color: #f8f1e5;
+      color: #433422;
+    }
+    body.theme-sepia header {
+      background-color: rgba(248, 241, 229, 0.9);
+      border-color: #eddcc4;
+    }
+    body.theme-sepia aside,
+    body.theme-sepia #displayMenu,
+    body.theme-sepia #modalChapterPicker > div,
+    body.theme-sepia #modalSearch > div,
+    body.theme-sepia #drawerBookmarks,
+    body.theme-sepia #modalVerseAction > div {
+      background-color: #eddcc4;
+      color: #2b2014;
+      border-color: #d8c3a5;
+    }
+    
+    body {
+      transition: background-color 0.25s ease, color 0.25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Cores de Destaque / Marcação */
+    .hl-yellow { background-color: rgba(254, 240, 138, 0.6); }
+    .hl-green  { background-color: rgba(187, 247, 208, 0.6); }
+    .hl-blue   { background-color: rgba(191, 219, 254, 0.6); }
+    .hl-pink   { background-color: rgba(251, 207, 232, 0.6); }
+
+    .dark .hl-yellow { background-color: rgba(161, 98, 7, 0.45); }
+    .dark .hl-green  { background-color: rgba(21, 128, 61, 0.45); }
+    .dark .hl-blue   { background-color: rgba(29, 78, 216, 0.45); }
+    .dark .hl-pink   { background-color: rgba(190, 24, 93, 0.45); }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.5);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 font-sans min-h-full flex flex-col selection:bg-amber-200 dark:selection:bg-amber-900">
+
+  <!-- Top Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+      
+      <!-- Brand Logo & Version Selector -->
+      <div class="flex items-center gap-3">
+        <button id="btnToggleSidebar" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors" title="Abrir Índice">
+          <i class="fa-solid fa-bars text-lg"></i>
+        </button>
+        <div class="flex items-center gap-2 cursor-pointer" id="brandTitle">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-amber-500/20">
+            <i class="fa-solid fa-book-bible text-lg"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base leading-tight tracking-tight">Bíblia Sagrada</h1>
+            
+            <!-- Seletor de Arquivo Local -->
+            <select id="versionSelect" class="text-xs text-amber-600 dark:text-amber-400 font-bold bg-transparent outline-none cursor-pointer">
+              <option value="acf.json">ACF (Almeida Corrigida Fiel)</option>
+              <option value="aa.json">AA (Almeida Revisada)</option>
+              <option value="nvi.json">NVI (Nova Versão Internacional)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-1 sm:gap-2">
+        <!-- Quick Theme Toggle -->
+        <button id="btnQuickThemeToggle" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Alternar Modo Escuro/Claro">
+          <i id="themeToggleIcon" class="fa-solid fa-moon"></i>
+        </button>
+
+        <button id="btnOpenSearch" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-2" title="Pesquisar por texto ou referência (Pressione /)">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span class="hidden md:inline text-xs bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 text-slate-400">/</span>
+        </button>
+
+        <button id="btnToggleAudio" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Ouvir Capítulo em Áudio">
+          <i class="fa-solid fa-volume-high"></i>
+        </button>
+
+        <!-- Display Customization Dropdown -->
+        <div class="relative">
+          <button id="btnDisplaySettings" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Ajustes de Exibição">
+            <i class="fa-solid fa-font"></i>
+          </button>
+          
+          <div id="displayMenu" class="hidden absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-4 z-50 text-sm space-y-4">
+            <h4 class="font-semibold text-xs uppercase tracking-wider text-slate-400">Personalizar Leitura</h4>
+            
+            <div>
+              <label class="block text-xs font-medium mb-1.5">Tamanho do Texto</label>
+              <div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700/50 p-1 rounded-xl">
+                <button id="btnFontDec" class="flex-1 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-600 font-semibold transition-all">A-</button>
+                <span id="lblFontSize" class="text-xs font-semibold px-2">18px</span>
+                <button id="btnFontInc" class="flex-1 py-1.5 rounded-lg hover:bg-white dark:hover:bg-slate-600 font-semibold transition-all">A+</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium mb-1.5">Estilo da Fonte</label>
+              <div class="grid grid-cols-2 gap-2">
+                <button id="btnFontSans" class="py-1.5 px-3 rounded-xl border border-amber-500 font-sans text-xs font-medium">Sans</button>
+                <button id="btnFontSerif" class="py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 font-serif text-xs font-medium">Serif</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-medium mb-1.5">Tema de Leitura</label>
+              <div class="grid grid-cols-3 gap-1.5">
+                <button id="btnThemeLight" class="p-2 rounded-xl border border-slate-200 bg-white text-slate-800 flex flex-col items-center gap-1 text-xs font-medium">
+                  <i class="fa-solid fa-sun text-amber-500"></i> Claro
+                </button>
+                <button id="btnThemeSepia" class="p-2 rounded-xl border border-amber-200 bg-[#f8f1e5] text-[#433422] flex flex-col items-center gap-1 text-xs font-medium">
+                  <i class="fa-solid fa-book-open text-amber-700"></i> Sépia
+                </button>
+                <button id="btnThemeDark" class="p-2 rounded-xl border border-slate-700 bg-slate-900 text-slate-200 flex flex-col items-center gap-1 text-xs font-medium">
+                  <i class="fa-solid fa-moon text-indigo-400"></i> Escuro
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="btnOpenBookmarks" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative" title="Favoritos & Anotações">
+          <i class="fa-solid fa-bookmark"></i>
+          <span id="bookmarkBadge" class="hidden absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber-500"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Audio Player Floating Bar -->
+  <div id="audioBar" class="hidden sticky top-16 z-20 bg-amber-500 text-white px-4 py-2.5 shadow-lg flex items-center justify-between gap-4 transition-all">
+    <div class="flex items-center gap-3 overflow-hidden">
+      <button id="btnPlayPauseAudio" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center shrink-0">
+        <i class="fa-solid fa-play text-sm" id="audioIcon"></i>
+      </button>
+      <div class="truncate text-sm">
+        <span class="font-bold" id="audioTitle">Lendo Capítulo...</span>
+        <p class="text-xs text-amber-100 truncate" id="audioSubtext">Toque para ouvir a narração</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+      <select id="audioSpeed" class="bg-amber-600 text-xs font-medium rounded-lg px-2 py-1 outline-none text-white">
+        <option value="0.8">0.8x</option>
+        <option value="1" selected>1.0x</option>
+        <option value="1.2">1.2x</option>
+        <option value="1.5">1.5x</option>
+      </select>
+      <button id="btnCloseAudio" class="p-1.5 hover:bg-white/20 rounded-lg text-amber-100 hover:text-white">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="flex-1 max-w-7xl w-full mx-auto flex relative">
+
+    <!-- Overlay Global para Drawers/Modais -->
+    <div id="drawerOverlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 transition-opacity"></div>
+
+    <!-- Sidebar: Books & Chapters Index -->
+    <aside id="sidebarNav" class="fixed lg:sticky top-16 left-0 z-40 lg:z-10 w-80 h-[calc(100vh-4rem)] bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 -translate-x-full lg:translate-x-0 transition-transform duration-300 flex flex-col shrink-0">
+      
+      <div class="p-4 border-b border-slate-200 dark:border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-sm tracking-tight">Índice da Bíblia</span>
+          <button id="btnCloseSidebar" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium">
+          <button id="filterAll" class="py-1.5 rounded-lg bg-white dark:bg-slate-700 shadow-sm font-semibold text-amber-600 dark:text-amber-400">Todos</button>
+          <button id="filterOT" class="py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-400">A.T.</button>
+          <button id="filterNT" class="py-1.5 rounded-lg hover:bg-white/50 dark:hover:bg-slate-700/50 text-slate-600 dark:text-slate-400">N.T.</button>
+        </div>
+
+        <div class="relative">
+          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+          <input type="text" id="bookSearchInput" placeholder="Filtrar livros..." class="w-full bg-slate-100 dark:bg-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/50 border border-transparent dark:border-slate-700">
+        </div>
+      </div>
+
+      <div id="booksList" class="flex-1 overflow-y-auto p-2 space-y-1">
+        <!-- Inserido dinamicamente via JS -->
+      </div>
+    </aside>
+
+    <!-- Main Reader View -->
+    <main class="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 flex flex-col">
+      
+      <!-- Loading State -->
+      <div id="loadingView" class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+        <div class="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+        <p class="text-sm font-medium text-slate-500 dark:text-slate-400">Carregando arquivo bíblico...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="errorView" class="hidden flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto">
+        <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 text-red-500 rounded-2xl flex items-center justify-center text-2xl mb-4">
+          <i class="fa-solid fa-folder-open"></i>
+        </div>
+        <h3 class="font-bold text-lg mb-2">Erro ao carregar arquivo local</h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mb-6" id="errorMessage">Certifique-se de que os arquivos acf.json, aa.json ou nvi.json estão na mesma pasta.</p>
+        <button id="btnRetryFetch" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-medium rounded-xl text-sm shadow-md shadow-amber-500/20 transition-all">
+          <i class="fa-solid fa-rotate-right mr-2"></i> Tentar Novamente
+        </button>
+      </div>
+
+      <!-- Reader View -->
+      <article id="readerView" class="hidden max-w-3xl mx-auto w-full flex-1 flex flex-col">
+        
+        <div class="flex items-center justify-between pb-6 mb-6 border-b border-slate-200 dark:border-slate-800">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span id="testamentBadge" class="text-[10px] uppercase font-extrabold tracking-widest text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800">Antigo Testamento</span>
+              <span id="verseCountBadge" class="text-xs text-slate-400">0 Versículos</span>
+            </div>
+            <h2 id="chapterTitle" class="text-2xl sm:text-3xl font-extrabold tracking-tight">Gênesis 1</h2>
+          </div>
+
+          <button id="btnSelectChapter" class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3.5 py-2 rounded-xl text-sm font-semibold transition-colors">
+            <span id="currentChapterLabel">Cap. 1</span>
+            <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+          </button>
+        </div>
+
+        <!-- Verses Container -->
+        <div id="versesContainer" class="flex-1 space-y-4 leading-relaxed font-sans transition-all text-lg" style="font-size: 18px;">
+          <!-- Versículos inseridos aqui -->
+        </div>
+
+        <!-- Chapter Navigation -->
+        <div class="pt-8 mt-12 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+          <button id="btnPrevChapter" class="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-semibold transition-colors disabled:opacity-30 disabled:pointer-events-none">
+            <i class="fa-solid fa-arrow-left"></i> Anterior
+          </button>
+
+          <span class="text-xs text-slate-400 hidden sm:inline">Toque em qualquer versículo para grifar ou anotar</span>
+
+          <button id="btnNextChapter" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold transition-colors shadow-md shadow-amber-500/20 disabled:opacity-30 disabled:pointer-events-none">
+            Próximo <i class="fa-solid fa-arrow-right"></i>
+          </button>
+        </div>
+      </article>
+
+    </main>
+  </div>
+
+  <!-- Modal: Chapter Grid Picker -->
+  <div id="modalChapterPicker" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+        <h3 class="font-bold text-base" id="pickerBookName">Selecione o Capítulo</h3>
+        <button id="btnCloseChapterPicker" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div id="chaptersGrid" class="p-4 overflow-y-auto grid grid-cols-5 sm:grid-cols-8 gap-2">
+        <!-- Grade de números -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Search Panel -->
+  <div id="modalSearch" class="hidden fixed inset-0 z-50 flex items-start justify-center p-4 sm:p-6 bg-slate-900/60 backdrop-blur-sm pt-12 sm:pt-20">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+        <i class="fa-solid fa-magnifying-glass text-slate-400"></i>
+        <input type="text" id="searchInput" placeholder="Busque por palavra ou referência (ex: João 3, João 3:16 ou João 3:16~20)..." class="w-full bg-transparent text-sm outline-none font-medium">
+        <button id="btnCloseSearch" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+      <div id="searchResults" class="p-4 overflow-y-auto flex-1 space-y-3">
+        <p class="text-center text-xs text-slate-400 py-8">Digite uma palavra ou referência (ex: "João 3", "João 3:16" ou "João 3:16~20")...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drawer: Bookmarks & Notes -->
+  <aside id="drawerBookmarks" class="fixed top-0 right-0 z-50 w-80 h-full bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 translate-x-full transition-transform duration-300 flex flex-col">
+    <div class="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+      <h3 class="font-bold text-sm">Favoritos e Anotações</h3>
+      <button id="btnCloseBookmarks" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+        <i class="fa-solid fa-xmark text-lg"></i>
+      </button>
+    </div>
+    <div id="bookmarksList" class="flex-1 overflow-y-auto p-4 space-y-3">
+      <!-- Lista de salvos -->
+    </div>
+  </aside>
+
+  <!-- Modal: Verse Action Menu -->
+  <div id="modalVerseAction" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700/50 pb-3">
+        <h4 id="actionVerseTitle" class="font-bold text-sm text-amber-600 dark:text-amber-400">Gênesis 1:1</h4>
+        <button id="btnCloseVerseAction" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <div>
+        <span class="text-xs font-semibold text-slate-400 block mb-2">Destacar Versículo</span>
+        <div class="flex gap-2">
+          <button data-color="yellow" class="btnColorPick w-8 h-8 rounded-full bg-yellow-200 border-2 border-transparent hover:scale-110 transition-transform"></button>
+          <button data-color="green" class="btnColorPick w-8 h-8 rounded-full bg-green-200 border-2 border-transparent hover:scale-110 transition-transform"></button>
+          <button data-color="blue" class="btnColorPick w-8 h-8 rounded-full bg-blue-200 border-2 border-transparent hover:scale-110 transition-transform"></button>
+          <button data-color="pink" class="btnColorPick w-8 h-8 rounded-full bg-pink-200 border-2 border-transparent hover:scale-110 transition-transform"></button>
+          <button data-color="none" class="w-8 h-8 rounded-full border border-slate-300 dark:border-slate-600 flex items-center justify-center text-xs hover:scale-110 transition-transform" title="Remover"><i class="fa-solid fa-ban text-slate-400"></i></button>
+        </div>
+      </div>
+
+      <div>
+        <span class="text-xs font-semibold text-slate-400 block mb-1">Anotação Pessoal</span>
+        <textarea id="verseNoteInput" rows="3" placeholder="Escreva suas reflexões sobre este versículo..." class="w-full bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-amber-500/50"></textarea>
+      </div>
+
+      <div class="flex items-center gap-2 pt-2">
+        <button id="btnCopyVerse" class="flex-1 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-2">
+          <i class="fa-regular fa-copy"></i> Copiar
+        </button>
+        <button id="btnSaveVerseAction" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl text-xs shadow-md shadow-amber-500/20 transition-colors flex items-center justify-center gap-2">
+          <i class="fa-solid fa-check"></i> Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    let bibleData = null;
+    let currentBookIdx = 0;
+    let currentChapterIdx = 0;
+    let fontSize = 18;
+    let activeFilter = 'ALL';
+    let userUserData = JSON.parse(localStorage.getItem('acf_bible_userdata') || '{"highlights":{},"notes":{}}');
+    let selectedVerseRef = null;
+    let speechSynth = window.speechSynthesis;
+    let speechUtterance = null;
+
+    const DOM = {
+      versionSelect: document.getElementById('versionSelect'),
+      loadingView: document.getElementById('loadingView'),
+      errorView: document.getElementById('errorView'),
+      readerView: document.getElementById('readerView'),
+      errorMessage: document.getElementById('errorMessage'),
+      btnRetryFetch: document.getElementById('btnRetryFetch'),
+      
+      btnQuickThemeToggle: document.getElementById('btnQuickThemeToggle'),
+      themeToggleIcon: document.getElementById('themeToggleIcon'),
+
+      sidebarNav: document.getElementById('sidebarNav'),
+      btnToggleSidebar: document.getElementById('btnToggleSidebar'),
+      btnCloseSidebar: document.getElementById('btnCloseSidebar'),
+      drawerOverlay: document.getElementById('drawerOverlay'),
+      booksList: document.getElementById('booksList'),
+      bookSearchInput: document.getElementById('bookSearchInput'),
+      filterAll: document.getElementById('filterAll'),
+      filterOT: document.getElementById('filterOT'),
+      filterNT: document.getElementById('filterNT'),
+
+      chapterTitle: document.getElementById('chapterTitle'),
+      testamentBadge: document.getElementById('testamentBadge'),
+      verseCountBadge: document.getElementById('verseCountBadge'),
+      currentChapterLabel: document.getElementById('currentChapterLabel'),
+      versesContainer: document.getElementById('versesContainer'),
+      btnPrevChapter: document.getElementById('btnPrevChapter'),
+      btnNextChapter: document.getElementById('btnNextChapter'),
+
+      btnDisplaySettings: document.getElementById('btnDisplaySettings'),
+      displayMenu: document.getElementById('displayMenu'),
+      btnFontDec: document.getElementById('btnFontDec'),
+      btnFontInc: document.getElementById('btnFontInc'),
+      lblFontSize: document.getElementById('lblFontSize'),
+      btnFontSans: document.getElementById('btnFontSans'),
+      btnFontSerif: document.getElementById('btnFontSerif'),
+      btnThemeLight: document.getElementById('btnThemeLight'),
+      btnThemeSepia: document.getElementById('btnThemeSepia'),
+      btnThemeDark: document.getElementById('btnThemeDark'),
+
+      modalChapterPicker: document.getElementById('modalChapterPicker'),
+      btnSelectChapter: document.getElementById('btnSelectChapter'),
+      btnCloseChapterPicker: document.getElementById('btnCloseChapterPicker'),
+      pickerBookName: document.getElementById('pickerBookName'),
+      chaptersGrid: document.getElementById('chaptersGrid'),
+
+      modalSearch: document.getElementById('modalSearch'),
+      btnOpenSearch: document.getElementById('btnOpenSearch'),
+      btnCloseSearch: document.getElementById('btnCloseSearch'),
+      searchInput: document.getElementById('searchInput'),
+      searchResults: document.getElementById('searchResults'),
+
+      drawerBookmarks: document.getElementById('drawerBookmarks'),
+      btnOpenBookmarks: document.getElementById('btnOpenBookmarks'),
+      btnCloseBookmarks: document.getElementById('btnCloseBookmarks'),
+      bookmarksList: document.getElementById('bookmarksList'),
+      bookmarkBadge: document.getElementById('bookmarkBadge'),
+
+      modalVerseAction: document.getElementById('modalVerseAction'),
+      btnCloseVerseAction: document.getElementById('btnCloseVerseAction'),
+      actionVerseTitle: document.getElementById('actionVerseTitle'),
+      verseNoteInput: document.getElementById('verseNoteInput'),
+      btnCopyVerse: document.getElementById('btnCopyVerse'),
+      btnSaveVerseAction: document.getElementById('btnSaveVerseAction'),
+
+      btnToggleAudio: document.getElementById('btnToggleAudio'),
+      audioBar: document.getElementById('audioBar'),
+      btnPlayPauseAudio: document.getElementById('btnPlayPauseAudio'),
+      audioIcon: document.getElementById('audioIcon'),
+      audioTitle: document.getElementById('audioTitle'),
+      audioSpeed: document.getElementById('audioSpeed'),
+      btnCloseAudio: document.getElementById('btnCloseAudio')
+    };
+
+    async function init() {
+      setupEventListeners();
+      loadSavedTheme();
+      registerServiceWorker();
+      await fetchBibleData(DOM.versionSelect.value);
+      updateBookmarkBadge();
+    }
+
+    // Registro automático do Service Worker PWA para Cache Offline
+    function registerServiceWorker() {
+      if ('serviceWorker' in navigator) {
+        const swCode = `
+          const CACHE_NAME = 'biblia-app-v1';
+          self.addEventListener('install', e => {
+            e.waitUntil(
+              caches.open(CACHE_NAME).then(cache => {
+                return cache.addAll(['./', './index.html', './acf.json', './aa.json', './nvi.json', './manifest.json']);
+              })
+            );
+          });
+          self.addEventListener('fetch', e => {
+            e.respondWith(
+              caches.match(e.request).then(res => res || fetch(e.request))
+            );
+          });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl).catch(() => {});
+      }
+    }
+
+    function loadSavedTheme() {
+      const savedTheme = localStorage.getItem('acf_bible_theme') || 'light';
+      applyTheme(savedTheme);
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.classList.remove('dark');
+      document.body.classList.remove('theme-sepia');
+
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else if (theme === 'sepia') {
+        document.body.classList.add('theme-sepia');
+      }
+      
+      localStorage.setItem('acf_bible_theme', theme);
+      updateThemeIcon();
+    }
+
+    function toggleThemeMode() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const newTheme = isDark ? 'light' : 'dark';
+      applyTheme(newTheme);
+    }
+
+    function updateThemeIcon() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const isSepia = document.body.classList.contains('theme-sepia');
+      
+      if (isSepia) {
+        DOM.themeToggleIcon.className = 'fa-solid fa-book-open text-amber-700';
+      } else if (isDark) {
+        DOM.themeToggleIcon.className = 'fa-solid fa-sun text-amber-400';
+      } else {
+        DOM.themeToggleIcon.className = 'fa-solid fa-moon';
+      }
+    }
+
+    async function fetchBibleData(fileName) {
+      DOM.loadingView.classList.remove('hidden');
+      DOM.errorView.classList.add('hidden');
+      DOM.readerView.classList.add('hidden');
+
+      try {
+        const response = await fetch(fileName);
+        if (!response.ok) throw new Error("Erro de leitura local");
+
+        const rawData = await response.json();
+        
+        bibleData = rawData.map(item => ({
+          name: item.name || item.book || "Livro",
+          abbrev: item.abbrev || "",
+          chapters: item.chapters || []
+        }));
+
+        renderBooksList();
+        renderChapter(currentBookIdx, currentChapterIdx);
+        
+        DOM.loadingView.classList.add('hidden');
+        DOM.readerView.classList.remove('hidden');
+      } catch (err) {
+        DOM.loadingView.classList.add('hidden');
+        DOM.errorMessage.textContent = `Não foi possível carregar o arquivo '${fileName}'. Certifique-se de que os arquivos JSON estão no mesmo diretório.`;
+        DOM.errorView.classList.remove('hidden');
+      }
+    }
+
+    function renderBooksList() {
+      DOM.booksList.innerHTML = '';
+      const query = DOM.bookSearchInput.value.toLowerCase();
+
+      bibleData.forEach((book, bIdx) => {
+        const isOT = bIdx < 39;
+        if (activeFilter === 'OT' && !isOT) return;
+        if (activeFilter === 'NT' && isOT) return;
+        if (query && !book.name.toLowerCase().includes(query)) return;
+
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-between ${
+          bIdx === currentBookIdx 
+            ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20' 
+            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+        }`;
+        
+        btn.innerHTML = `
+          <span>${book.name}</span>
+          <span class="text-[10px] opacity-60 font-normal bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded">${book.chapters.length} cap</span>
+        `;
+
+        btn.onclick = () => {
+          renderChapter(bIdx, 0);
+          closeSidebar();
+        };
+
+        DOM.booksList.appendChild(btn);
+      });
+    }
+
+    function renderChapter(bIdx, cIdx) {
+      if (!bibleData || !bibleData[bIdx]) return;
+
+      currentBookIdx = bIdx;
+      currentChapterIdx = cIdx;
+
+      const book = bibleData[bIdx];
+      const verses = book.chapters[cIdx] || [];
+      const isOT = bIdx < 39;
+
+      DOM.chapterTitle.textContent = `${book.name} ${cIdx + 1}`;
+      DOM.testamentBadge.textContent = isOT ? 'Antigo Testamento' : 'Novo Testamento';
+      DOM.verseCountBadge.textContent = `${verses.length} Versículos`;
+      DOM.currentChapterLabel.textContent = `Cap. ${cIdx + 1}`;
+
+      DOM.versesContainer.innerHTML = '';
+
+      verses.forEach((verseText, vIdx) => {
+        const vNum = vIdx + 1;
+        const vKey = `${bIdx}_${cIdx}_${vNum}`;
+        const color = userUserData.highlights[vKey];
+        const hasNote = !!userUserData.notes[vKey];
+
+        const p = document.createElement('p');
+        p.id = `verse-${vNum}`;
+        p.className = `p-2 rounded-xl transition-colors cursor-pointer relative hover:bg-slate-100 dark:hover:bg-slate-800/50 ${
+          color ? 'hl-' + color : ''
+        }`;
+        
+        p.innerHTML = `
+          <sup class="text-xs font-bold text-amber-600 dark:text-amber-400 select-none mr-1.5">${vNum}</sup>
+          <span>${verseText}</span>
+          ${hasNote ? '<i class="fa-solid fa-note-sticky text-amber-500 text-xs ml-2"></i>' : ''}
+        `;
+
+        p.onclick = () => openVerseAction(vKey, `${book.name} ${cIdx + 1}:${vNum}`, verseText);
+        DOM.versesContainer.appendChild(p);
+      });
+
+      DOM.btnPrevChapter.disabled = (bIdx === 0 && cIdx === 0);
+      DOM.btnNextChapter.disabled = (bIdx === bibleData.length - 1 && cIdx === book.chapters.length - 1);
+
+      renderBooksList();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      if (speechSynth.speaking) {
+        stopAudio();
+      }
+    }
+
+    function openChapterPicker() {
+      const book = bibleData[currentBookIdx];
+      DOM.pickerBookName.textContent = `${book.name} - Capítulos`;
+      DOM.chaptersGrid.innerHTML = '';
+
+      book.chapters.forEach((_, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `h-10 rounded-xl font-semibold text-xs transition-all flex items-center justify-center ${
+          idx === currentChapterIdx
+            ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20'
+            : 'bg-slate-100 dark:bg-slate-700/50 hover:bg-amber-500/20 text-slate-700 dark:text-slate-200'
+        }`;
+        btn.textContent = idx + 1;
+        btn.onclick = () => {
+          renderChapter(currentBookIdx, idx);
+          DOM.modalChapterPicker.classList.add('hidden');
+        };
+        DOM.chaptersGrid.appendChild(btn);
+      });
+
+      DOM.modalChapterPicker.classList.remove('hidden');
+    }
+
+    function openVerseAction(key, title, text) {
+      selectedVerseRef = { key, title, text };
+      DOM.actionVerseTitle.textContent = title;
+      DOM.verseNoteInput.value = userUserData.notes[key] || '';
+      DOM.modalVerseAction.classList.remove('hidden');
+    }
+
+    function saveVerseAction(colorOverride) {
+      if (!selectedVerseRef) return;
+      const { key } = selectedVerseRef;
+
+      if (colorOverride !== undefined) {
+        if (colorOverride === 'none') {
+          delete userUserData.highlights[key];
+        } else {
+          userUserData.highlights[key] = colorOverride;
+        }
+      }
+
+      const noteVal = DOM.verseNoteInput.value.trim();
+      if (noteVal) {
+        userUserData.notes[key] = noteVal;
+      } else {
+        delete userUserData.notes[key];
+      }
+
+      localStorage.setItem('acf_bible_userdata', JSON.stringify(userUserData));
+      DOM.modalVerseAction.classList.add('hidden');
+      renderChapter(currentBookIdx, currentChapterIdx);
+      renderBookmarks();
+      updateBookmarkBadge();
+    }
+
+    function removeAccents(str) {
+      return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+
+    function handleSearch() {
+      const q = DOM.searchInput.value.trim();
+      if (q.length < 2) {
+        DOM.searchResults.innerHTML = '<p class="text-center text-xs text-slate-400 py-8">Digite uma palavra ou referência (ex: "João 3", "João 3:16" ou "João 3:16~20")...</p>';
+        return;
+      }
+
+      const normalizedInput = removeAccents(q);
+      const refRegex = /^([1-3]?\s?[a-zA-zà-úÀ-Ú]+)\s+(\d+)(?::(\d+)(?:[~-](\d+))?)?$/i;
+      const match = q.match(refRegex);
+
+      if (match) {
+        const bookQuery = removeAccents(match[1].trim());
+        const targetChapter = parseInt(match[2], 10) - 1;
+        const startVerse = match[3] ? parseInt(match[3], 10) : null;
+        const endVerse = match[4] ? parseInt(match[4], 10) : (startVerse ? startVerse : null);
+
+        const bookIndex = bibleData.findIndex(b => 
+          removeAccents(b.name) === bookQuery || 
+          removeAccents(b.name).startsWith(bookQuery) || 
+          (b.abbrev && removeAccents(b.abbrev) === bookQuery)
+        );
+
+        if (bookIndex !== -1) {
+          const book = bibleData[bookIndex];
+          if (book.chapters[targetChapter]) {
+            const verses = book.chapters[targetChapter];
+            DOM.searchResults.innerHTML = '';
+
+            if (!startVerse) {
+              const item = document.createElement('div');
+              item.className = 'p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 cursor-pointer transition-colors';
+              item.innerHTML = `
+                <h5 class="font-bold text-sm text-amber-600 dark:text-amber-400 mb-1">Ir para ${book.name} ${targetChapter + 1}</h5>
+                <p class="text-xs text-slate-600 dark:text-slate-300">Capítulo completo (${verses.length} versículos)</p>
+              `;
+              item.onclick = () => {
+                renderChapter(bookIndex, targetChapter);
+                DOM.modalSearch.classList.add('hidden');
+              };
+              DOM.searchResults.appendChild(item);
+              return;
+            }
+
+            const vStartIdx = Math.max(1, startVerse) - 1;
+            const vEndIdx = Math.min(verses.length, endVerse) - 1;
+
+            for (let v = vStartIdx; v <= vEndIdx; v++) {
+              if (verses[v]) {
+                const item = document.createElement('div');
+                item.className = 'p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 hover:bg-amber-500/10 cursor-pointer border border-slate-100 dark:border-slate-700/50 transition-colors';
+                item.innerHTML = `
+                  <h5 class="font-bold text-xs text-amber-600 dark:text-amber-400 mb-1">${book.name} ${targetChapter + 1}:${v + 1}</h5>
+                  <p class="text-xs text-slate-600 dark:text-slate-300">${verses[v]}</p>
+                `;
+                item.onclick = () => {
+                  renderChapter(bookIndex, targetChapter);
+                  DOM.modalSearch.classList.add('hidden');
+                  setTimeout(() => {
+                    const el = document.getElementById(`verse-${v + 1}`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 150);
+                };
+                DOM.searchResults.appendChild(item);
+              }
+            }
+            return;
+          }
+        }
+      }
+
+      let matches = [];
+      bibleData.forEach((b, bIdx) => {
+        b.chapters.forEach((c, cIdx) => {
+          c.forEach((vText, vIdx) => {
+            if (removeAccents(vText).includes(normalizedInput)) {
+              matches.push({
+                bIdx, cIdx, vIdx,
+                title: `${b.name} ${cIdx + 1}:${vIdx + 1}`,
+                text: vText
+              });
+            }
+          });
+        });
+      });
+
+      if (matches.length === 0) {
+        DOM.searchResults.innerHTML = '<p class="text-center text-xs text-slate-400 py-8">Nenhum resultado encontrado.</p>';
+        return;
+      }
+
+      DOM.searchResults.innerHTML = '';
+      matches.slice(0, 50).forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'p-3 rounded-xl bg-slate-50 dark:bg-slate-700/30 hover:bg-amber-500/10 cursor-pointer border border-slate-100 dark:border-slate-700/50 transition-colors';
+        item.innerHTML = `
+          <h5 class="font-bold text-xs text-amber-600 dark:text-amber-400 mb-1">${m.title}</h5>
+          <p class="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">${m.text}</p>
+        `;
+        item.onclick = () => {
+          renderChapter(m.bIdx, m.cIdx);
+          DOM.modalSearch.classList.add('hidden');
+          setTimeout(() => {
+            const el = document.getElementById(`verse-${m.vIdx + 1}`);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }, 150);
+        };
+        DOM.searchResults.appendChild(item);
+      });
+    }
+
+    function renderBookmarks() {
+      DOM.bookmarksList.innerHTML = '';
+      const keys = new Set([...Object.keys(userUserData.highlights), ...Object.keys(userUserData.notes)]);
+
+      if (keys.size === 0) {
+        DOM.bookmarksList.innerHTML = '<p class="text-center text-xs text-slate-400 py-8">Nenhum marcador ou anotação salva.</p>';
+        return;
+      }
+
+      keys.forEach(k => {
+        const [bIdx, cIdx, vNum] = k.split('_').map(Number);
+        if (!bibleData[bIdx]) return;
+        
+        const book = bibleData[bIdx];
+        const verseText = book.chapters[cIdx][vNum - 1];
+        const color = userUserData.highlights[k];
+        const note = userUserData.notes[k];
+
+        const card = document.createElement('div');
+        card.className = 'p-3 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 bg-slate-50 dark:bg-slate-800/50';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-xs text-amber-600 dark:text-amber-400">${book.name} ${cIdx + 1}:${vNum}</span>
+            ${color ? `<span class="w-3 h-3 rounded-full hl-${color}"></span>` : ''}
+          </div>
+          <p class="text-xs text-slate-600 dark:text-slate-300 italic">"${verseText}"</p>
+          ${note ? `<p class="text-xs bg-white dark:bg-slate-700 p-2 rounded-xl text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-600">${note}</p>` : ''}
+        `;
+
+        card.onclick = () => {
+          renderChapter(bIdx, cIdx);
+          closeBookmarks();
+        };
+
+        DOM.bookmarksList.appendChild(card);
+      });
+    }
+
+    function updateBookmarkBadge() {
+      const total = Object.keys(userUserData.highlights).length + Object.keys(userUserData.notes).length;
+      if (total > 0) {
+        DOM.bookmarkBadge.classList.remove('hidden');
+      } else {
+        DOM.bookmarkBadge.classList.add('hidden');
+      }
+    }
+
+    function toggleAudio() {
+      if (!('speechSynthesis' in window)) {
+        alert('Seu navegador não suporta a síntese de voz.');
+        return;
+      }
+
+      if (speechSynth.speaking) {
+        if (speechSynth.paused) {
+          speechSynth.resume();
+          DOM.audioIcon.className = 'fa-solid fa-pause text-sm';
+        } else {
+          speechSynth.pause();
+          DOM.audioIcon.className = 'fa-solid fa-play text-sm';
+        }
+      } else {
+        startAudio();
+      }
+    }
+
+    function startAudio() {
+      const book = bibleData[currentBookIdx];
+      const verses = book.chapters[currentChapterIdx];
+      const fullText = `${book.name}, capítulo ${currentChapterIdx + 1}. ` + verses.join(' ');
+
+      speechUtterance = new SpeechSynthesisUtterance(fullText);
+      speechUtterance.lang = 'pt-BR';
+      speechUtterance.rate = parseFloat(DOM.audioSpeed.value);
+
+      speechUtterance.onstart = () => {
+        DOM.audioBar.classList.remove('hidden');
+        DOM.audioTitle.textContent = `${book.name} ${currentChapterIdx + 1}`;
+        DOM.audioIcon.className = 'fa-solid fa-pause text-sm';
+      };
+
+      speechUtterance.onend = () => {
+        stopAudio();
+      };
+
+      speechSynth.speak(speechUtterance);
+    }
+
+    function stopAudio() {
+      speechSynth.cancel();
+      DOM.audioBar.classList.add('hidden');
+      DOM.audioIcon.className = 'fa-solid fa-play text-sm';
+    }
+
+    function openSidebar() {
+      DOM.sidebarNav.classList.remove('-translate-x-full');
+      DOM.drawerOverlay.classList.remove('hidden');
+    }
+
+    function closeSidebar() {
+      DOM.sidebarNav.classList.add('-translate-x-full');
+      DOM.drawerOverlay.classList.add('hidden');
+    }
+
+    function openBookmarks() {
+      renderBookmarks();
+      DOM.drawerBookmarks.classList.remove('translate-x-full');
+      DOM.drawerOverlay.classList.remove('hidden');
+    }
+
+    function closeBookmarks() {
+      DOM.drawerBookmarks.classList.add('translate-x-full');
+      DOM.drawerOverlay.classList.add('hidden');
+    }
+
+    function setupEventListeners() {
+      DOM.versionSelect.onchange = (e) => fetchBibleData(e.target.value);
+
+      DOM.btnQuickThemeToggle.onclick = toggleThemeMode;
+
+      DOM.btnToggleSidebar.onclick = openSidebar;
+      DOM.btnCloseSidebar.onclick = closeSidebar;
+      DOM.drawerOverlay.onclick = () => {
+        closeSidebar();
+        closeBookmarks();
+      };
+
+      DOM.btnRetryFetch.onclick = () => fetchBibleData(DOM.versionSelect.value);
+
+      DOM.filterAll.onclick = () => setFilter('ALL', DOM.filterAll);
+      DOM.filterOT.onclick = () => setFilter('OT', DOM.filterOT);
+      DOM.filterNT.onclick = () => setFilter('NT', DOM.filterNT);
+      DOM.bookSearchInput.oninput = renderBooksList;
+
+      DOM.btnPrevChapter.onclick = () => {
+        if (currentChapterIdx > 0) {
+          renderChapter(currentBookIdx, currentChapterIdx - 1);
+        } else if (currentBookIdx > 0) {
+          const prevBook = bibleData[currentBookIdx - 1];
+          renderChapter(currentBookIdx - 1, prevBook.chapters.length - 1);
+        }
+      };
+
+      DOM.btnNextChapter.onclick = () => {
+        const book = bibleData[currentBookIdx];
+        if (currentChapterIdx < book.chapters.length - 1) {
+          renderChapter(currentBookIdx, currentChapterIdx + 1);
+        } else if (currentBookIdx < bibleData.length - 1) {
+          renderChapter(currentBookIdx + 1, 0);
+        }
+      };
+
+      DOM.btnDisplaySettings.onclick = () => DOM.displayMenu.classList.toggle('hidden');
+      DOM.btnFontInc.onclick = () => {
+        fontSize = Math.min(28, fontSize + 2);
+        DOM.lblFontSize.textContent = `${fontSize}px`;
+        DOM.versesContainer.style.fontSize = `${fontSize}px`;
+      };
+      DOM.btnFontDec.onclick = () => {
+        fontSize = Math.max(14, fontSize - 2);
+        DOM.lblFontSize.textContent = `${fontSize}px`;
+        DOM.versesContainer.style.fontSize = `${fontSize}px`;
+      };
+
+      DOM.btnFontSans.onclick = () => {
+        DOM.versesContainer.classList.remove('font-serif');
+        DOM.versesContainer.classList.add('font-sans');
+        DOM.btnFontSans.classList.add('border-amber-500');
+        DOM.btnFontSerif.classList.remove('border-amber-500');
+      };
+
+      DOM.btnFontSerif.onclick = () => {
+        DOM.versesContainer.classList.remove('font-sans');
+        DOM.versesContainer.classList.add('font-serif');
+        DOM.btnFontSerif.classList.add('border-amber-500');
+        DOM.btnFontSans.classList.remove('border-amber-500');
+      };
+
+      DOM.btnThemeLight.onclick = () => applyTheme('light');
+      DOM.btnThemeSepia.onclick = () => applyTheme('sepia');
+      DOM.btnThemeDark.onclick = () => applyTheme('dark');
+
+      DOM.btnSelectChapter.onclick = openChapterPicker;
+      DOM.btnCloseChapterPicker.onclick = () => DOM.modalChapterPicker.classList.add('hidden');
+
+      DOM.btnOpenSearch.onclick = () => DOM.modalSearch.classList.remove('hidden');
+      DOM.btnCloseSearch.onclick = () => DOM.modalSearch.classList.add('hidden');
+      DOM.searchInput.oninput = handleSearch;
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === '/' && document.activeElement !== DOM.searchInput && document.activeElement !== DOM.bookSearchInput) {
+          e.preventDefault();
+          DOM.modalSearch.classList.remove('hidden');
+          DOM.searchInput.focus();
+        }
+      });
+
+      DOM.btnOpenBookmarks.onclick = openBookmarks;
+      DOM.btnCloseBookmarks.onclick = closeBookmarks;
+
+      DOM.btnCloseVerseAction.onclick = () => DOM.modalVerseAction.classList.add('hidden');
+      DOM.btnSaveVerseAction.onclick = () => saveVerseAction();
+
+      document.querySelectorAll('.btnColorPick').forEach(btn => {
+        btn.onclick = () => {
+          const color = btn.getAttribute('data-color');
+          saveVerseAction(color);
+        };
+      });
+
+      DOM.btnCopyVerse.onclick = () => {
+        if (!selectedVerseRef) return;
+        navigator.clipboard.writeText(`"${selectedVerseRef.text}" - ${selectedVerseRef.title}`);
+        DOM.modalVerseAction.classList.add('hidden');
+      };
+
+      DOM.btnToggleAudio.onclick = toggleAudio;
+      DOM.btnPlayPauseAudio.onclick = toggleAudio;
+      DOM.btnCloseAudio.onclick = stopAudio;
+      DOM.audioSpeed.onchange = () => {
+        if (speechSynth.speaking) {
+          startAudio();
+        }
+      };
+    }
+
+    function setFilter(filter, btn) {
+      activeFilter = filter;
+      [DOM.filterAll, DOM.filterOT, DOM.filterNT].forEach(b => {
+        b.classList.remove('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'font-semibold', 'text-amber-600', 'dark:text-amber-400');
+        b.classList.add('text-slate-600', 'dark:text-slate-400');
+      });
+      btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-sm', 'font-semibold', 'text-amber-600', 'dark:text-amber-400');
+      renderBooksList();
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
